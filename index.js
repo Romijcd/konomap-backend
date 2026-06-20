@@ -8,11 +8,8 @@ app.use(express.json());
 
 // Connexion PostgreSQL
 const pool = new Pool({
-  user: 'postgres',
-  host: 'localhost',
-  database: 'konomap',
-  password: 'konomap123',
-  port: 5432,
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
 });
 
 // Initialiser la table
