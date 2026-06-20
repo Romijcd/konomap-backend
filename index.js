@@ -84,6 +84,56 @@ app.get('/classement', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+// GET /alertes - récupérer alertes actives
+app.get('/alertes', async (req, res) => {
+  try {
+    const result = await pool.query(
+      "SELECT * FROM alertes WHERE actif = true AND (expire_at IS NULL OR expire_at > NOW()) ORDER BY created_at DESC"
+    );
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
+// POST /alertes - soumettre une alerte
+app.post('/alertes', async (req, res) => {
+  const { type, lat, lng, par, description } = req.body;
+  const durees = {
+    'Embouteillage': 60,
+    'Accident': 120,
+    'Travaux': 1440,
+    'Inondation': 360,
+    'Contrôle police': 30,
+    'Pénurie carburant': 180,
+    'Nid de poule': 10080,
+    'Arbre tombé': 240,
+  };
+  const minutes = durees[type] || 60;
+  try {
+    const result = await pool.query(
+      "INSERT INTO alertes (type, lat, lng, par, description, expire_at) VALUES ($1, $2, $3, $4, $5, NOW() + INTERVAL '1 minute' * $6) RETURNING *",
+      [type, lat, lng, par, description, minutes]
+    );
+    res.json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /alertes/:id/vote - voter sur une alerte
+app.post('/alertes/:id/vote', async (req, res) => {
+  const { vote } = req.body;
+  const colonne = vote === 'confirme' ? 'votes_confirme' : 'votes_infirme';
+  try {
+    const result = await pool.query(
+      `UPDATE alertes SET ${colonne} = ${colonne} + 1 WHERE id = $1 RETURNING *`,
+      [req.params.id]
+    );
+    res.json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`✅ KonoMap backend sur port ${PORT}`));
