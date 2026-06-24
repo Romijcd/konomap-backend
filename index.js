@@ -42,11 +42,11 @@ app.get('/lieux', async (req, res) => {
 // POST nouveau lieu
 app.post('/lieux', async (req, res) => {
   try {
-    const { nom, type, description, lat, lng, par } = req.body;
+    const { nom, type, description, lat, lng, par, ville, categorie, sous_categorie } = req.body;
     if (!nom || !lat || !lng) return res.status(400).json({ error: 'Champs manquants' });
     const result = await pool.query(
-      'INSERT INTO lieux (nom, type, description, lat, lng, par) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
-      [nom, type, description, lat, lng, par || 'Anonyme']
+      'INSERT INTO lieux (nom, type, description, lat, lng, par, ville, categorie, sous_categorie) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *',
+      [nom, type, description, lat, lng, par || 'Anonyme', ville || null, categorie || null, sous_categorie || null]
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {
